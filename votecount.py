@@ -105,6 +105,7 @@ def format(tally):
     
     print """<table class="ev-tally">
 <tr>
+  <th></th>
   <th></th>"""
     for c in cands:
         print '  <th class="datahdr" colspan="2">%s</th>' % c
@@ -121,6 +122,7 @@ def format(tally):
 
         print '<tr%s>' % (' class="total"' if state == '_total' else '')
         print '  <td>%s</td>' % name
+        print '  <td class="data">%d</td>' % (TOTAL_EVS if state == '_total' else get_evs(state))
         for c in cands:
             val = tally[c]
             p = pct(val, TOTAL_EVS if state == '_total' else get_evs(state), 2 if state == '_total' else 0)
