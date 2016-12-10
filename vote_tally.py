@@ -3,9 +3,12 @@ import itertools
 import collections
 import sys
 
+# tally up electoral votes from election results using various methods
+
+# year of election
 ELECTION = int(sys.argv[1])
 
-with open('states.csv') as f:
+with open('data/states.csv') as f:
     states = {}
     for row in csv.DictReader(f):
         for k, v in row.iteritems():
@@ -22,8 +25,9 @@ def get_evs(state):
     return states[state][field]
 TOTAL_EVS = sum(get_evs(state) for state in states.keys())
 
+# read and clean up election results from wikipedia extract
 totals = {}
-with open('%s_results.csv' % ELECTION) as f:
+with open('data/%s_results.csv' % ELECTION) as f:
     r = csv.reader(f)
     for i, row in enumerate(r):
         if i == 0:
@@ -66,6 +70,9 @@ assert len(totals) == 51
 def pct(x, ttl, digits=2):
     return '%0.*f%%' % (digits, 100. * x / ttl)
 
+# tally up all results, returning per-state and total results
+# 'method' is a function taking in the state's # of electoral votes and a list of percentages of popular vote
+# and returns a list of electoral votes allocated to each candidate
 def tally_state_evs(method):
     tally = collections.defaultdict(dict)
     for state, results in totals.iteritems():
@@ -79,10 +86,12 @@ def tally_state_evs(method):
             for v in tally.values():
                 del v[cand]
     return dict(tally)
-            
+
+# allocate electoral votes proportionally
 def proportional(ev, pcts):
     return [ev * k for k in pcts]
 
+# allocate electoral votes proportionally, but use fair rounding
 def proportional_rounded(ev, pcts):
     pcts = dict(enumerate(pcts))
     rounded = [None] * len(pcts)
@@ -95,11 +104,13 @@ def proportional_rounded(ev, pcts):
     assert ev == 0
     return rounded
 
+# allocate rounded electorate votes proportionally to the top two candidates
 def top_two(ev, pcts):
     second_place = sorted(pcts)[-2]
     pcts = [0 if x < second_place else x for x in pcts]
     return proportional_rounded(ev, pcts)
 
+# format the electoral tally into an html table in 'fancy' mode
 def format(tally):
     cands = [c for c in candidates if c in tally['_total']]
     
@@ -142,6 +153,7 @@ def format(tally):
     print '</table>'
     print
     
+# format the electoral tally into an html table in 'simple' mode
 def format_simple(tally):
     cands = [c for c in candidates if c in tally['_total']]
     
@@ -181,7 +193,7 @@ def format_simple(tally):
     print '</table>'
     print
     
-
+# format all the different scenarios into a summary html table
 def summarize(total_pop, pop, real_evs, prop, prop_int, top2):
     ordered_candidates = sorted(candidates, key=lambda c: -pop[c])
     assert sum(real_evs) == TOTAL_EVS
